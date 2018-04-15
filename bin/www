@@ -1,0 +1,125 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('nautransit-backend:server');
+var http = require('http');
+
+const settings = require('../settings.json');
+
+const MountainLineLink = require('../lib/links/MountainLineLink');
+const TranslocLink = require('../lib/links/TranslocLink');
+
+global.links = [];
+global.links.push(new MountainLineLink());
+global.links.push(new TranslocLink());
+
+function executeLinkUpdate() {
+    global.links.forEach(function (current) {
+        try {
+            current.fetch_routes();
+        } catch(e) {
+            console.error("error in link refresh");
+            console.error(e);
+        }
+    })
+}
+
+function executeBusUpdate() {
+    global.links.forEach(function (current) {
+        if(current.ready) {
+            try {
+                current.fetch_buses();
+            } catch (e) {
+                console.error("error in bus refresh");
+                console.error(e);
+            }
+        }
+    })
+}
+executeLinkUpdate();
+setInterval(executeLinkUpdate, 1000 * 60 * 60); // execute interval every hour. Should be a sufficient update schedule.
+setInterval(executeBusUpdate, 1000 * 3);
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+    var port = parseInt(val, 10);
+
+    if (isNaN(port)) {
+        // named pipe
+        return val;
+    }
+
+    if (port >= 0) {
+        // port number
+        return port;
+    }
+
+    return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+    if (error.syscall !== 'listen') {
+        throw error;
+    }
+
+    var bind = typeof port === 'string'
+        ? 'Pipe ' + port
+        : 'Port ' + port;
+
+    // handle specific listen errors with friendly messages
+    switch (error.code) {
+        case 'EACCES':
+            console.error(bind + ' requires elevated privileges');
+            process.exit(1);
+            break;
+        case 'EADDRINUSE':
+            console.error(bind + ' is already in use');
+            process.exit(1);
+            break;
+        default:
+            throw error;
+    }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+    var addr = server.address();
+    var bind = typeof addr === 'string'
+        ? 'pipe ' + addr
+        : 'port ' + addr.port;
+    debug('Listening on ' + bind);
+}
