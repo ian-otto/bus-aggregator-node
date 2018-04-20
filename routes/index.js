@@ -1,7 +1,19 @@
 const express = require('express');
 const router = express.Router();
+const redis = require("redis");
+const redis_config = require('../redis_settings.json');
+let redis_cli = null;
+const get_redis_client = function () {
+    if(redis_cli)
+        return redis_cli;
+    redis_cli = redis.createClient(redis_config);
+    redis_cli.on('error', function (err) {
+        console.log("Redis client error");
+    });
+    return redis_cli;
+};
 
-let get_route_from_stop = (stop_id) => {
+const get_route_from_stop = (stop_id) => {
     for(let item of global.links) {
         if(item.stops_array !== undefined) {
             for(let obj of item.stops_array) {
@@ -17,7 +29,7 @@ let get_route_from_stop = (stop_id) => {
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.json({"version": "1.0"});
+    res.json({"version": "1.0"});
 });
 
 router.get('/routes', function (req, res, next) {
@@ -48,14 +60,34 @@ router.get('/stops/eta/:id', function (req, res, next) {
         res.json({"error": "Unknown routeID"});
         return;
     }
-    route.get_arrival_time(req.params.id, function(err, data) {
-        if(err) {
-            console.log(err);
-            res.json({error: err});
-        } else {
-            res.json(data);
-        }
-    });
+    let cli = get_redis_client();
+    if(cli.connected) {
+        cli.get(req.params.id, function (err, c_data) {
+            if(err) {
+                route.get_arrival_time(req.params.id, function(err, data) {
+                    if(err) {
+                        console.log(err);
+                        cli.setex(req.params.id, 10, {error: err});
+                        res.json({error: err});
+                    } else {
+                        cli.setex(req.params.id, 10, data);
+                        res.json(data);
+                    }
+                });
+            } else {
+                res.json(c_data);
+            }
+        });
+    } else {
+        route.get_arrival_time(req.params.id, function(err, data) {
+            if(err) {
+                console.log(err);
+                res.json({error: err});
+            } else {
+                res.json(data);
+            }
+        });
+    }
 });
 
 router.get('/buses', function (req, res) {

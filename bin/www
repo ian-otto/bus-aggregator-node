@@ -8,8 +8,6 @@ var app = require('../app');
 var debug = require('debug')('nautransit-backend:server');
 var http = require('http');
 
-const settings = require('../settings.json');
-
 const MountainLineLink = require('../lib/links/MountainLineLink');
 const TranslocLink = require('../lib/links/TranslocLink');
 
