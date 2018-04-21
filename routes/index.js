@@ -12,7 +12,7 @@ const get_redis_client = function () {
     });
     return redis_cli;
 };
-
+get_redis_client(); // setup redis connection IMMEDIATELY
 const get_route_from_stop = (stop_id) => {
     for(let item of global.links) {
         if(item.stops_array !== undefined) {
@@ -65,7 +65,7 @@ router.get('/stops/eta/:id', function (req, res, next) {
         cli.get(req.params.id, function (err, c_data) {
             if(err) {
                 route.get_arrival_time(req.params.id, function(err, data) {
-                    if(err) {
+                    if(err || data === null) {
                         console.log(err);
                         cli.setex(req.params.id, 10, {error: err});
                         res.json({error: err});
