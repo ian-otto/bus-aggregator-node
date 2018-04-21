@@ -63,18 +63,19 @@ router.get('/stops/eta/:id', function (req, res, next) {
     let cli = get_redis_client();
     if(cli.connected) {
         cli.get(req.params.id, function (err, c_data) {
-            if(err) {
+            if(err || c_data === null) {
                 route.get_arrival_time(req.params.id, function(err, data) {
-                    if(err || data === null) {
+                    if(err) {
                         console.log(err);
-                        cli.setex(req.params.id, 10, {error: err});
+                        cli.setex(req.params.id, 10, JSON.stringify({error: err}));
                         res.json({error: err});
                     } else {
-                        cli.setex(req.params.id, 10, data);
+                        cli.setex(req.params.id, 10, JSON.stringify(data));
                         res.json(data);
                     }
                 });
             } else {
+		c_data = JSON.parse(c_data); //TODO: find a better way to do this
                 res.json(c_data);
             }
         });
