@@ -1,5 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const helpers  = require('../lib/helpers');
+const BusNotifier = helpers.BusNotifier;
+const Watcher = helpers.Watcher;
+let busNotifier = new BusNotifier();
 
 const get_route_from_stop = (stop_id) => {
     for(let item of global.links) {
@@ -18,6 +22,8 @@ const get_route_from_stop = (stop_id) => {
 /* GET home page. */
 router.get('/', function(req, res, next) {
     res.json({"version": "1.0"});
+    res.setHeader("Cache-Control", "public, max-age=2592000");
+    res.setHeader("Expires", new Date(Date.now() + 2592000000).toUTCString());
 });
 
 router.get('/routes', function (req, res, next) {
@@ -25,6 +31,8 @@ router.get('/routes', function (req, res, next) {
     global.links.forEach(function (current) {
         retval = retval.concat(current.get_routes());
     });
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.setHeader("Expires", new Date(Date.now() + 3600000).toUTCString());
     res.json(retval);
 });
 
@@ -33,6 +41,8 @@ router.get('/stops', function (req, res, next) {
     global.links.forEach(function (current) {
         retval = retval.concat(current.get_stops());
     });
+    res.setHeader("Cache-Control", "public, max-age=3600");
+    res.setHeader("Expires", new Date(Date.now() + 3600000).toUTCString());
     res.json(retval);
 });
 
@@ -63,6 +73,17 @@ router.get('/buses', function (req, res) {
         retval = retval.concat(current.bus_array);
     });
     res.json(retval);
+});
+
+router.put('/buses/notification', function (req, res) {
+    if(req.body.bus_id && req.body.trip_id && req.body.stop_id && req.body.notification_token && req.body.time_before) {
+        try {
+            busNotifier.add_watcher(new Watcher(req.body.bus_id, req.body.trip_id, req.body.stop_id, req.body.notification_token, req.body.time_before));
+            res.json({success: true});
+        } catch(e) {
+            res.json({success: false, error: "Error in setting notification", stack: e});
+        }
+    }
 });
 
 module.exports = router;

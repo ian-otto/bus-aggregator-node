@@ -42,8 +42,11 @@ executeLinkUpdate();
 setInterval(executeLinkUpdate, 1000 * 60 * 60); // execute interval every hour. Should be a sufficient update schedule.
 setInterval(executeBusUpdate, 1000 * 3);
 
-const ETAGrabber = require('../lib/helpers').ETAGrabber;
-global.etaGrabber = new ETAGrabber("../redis_settings.json");
+const helpers = require('../lib/helpers');
+const RedisManager = helpers.RedisManager;
+const ETAGrabber = helpers.ETAGrabber;
+global.redisManager = new RedisManager("redis_settings.json");
+global.etaGrabber = new ETAGrabber(global.redisManager);
 
 /**
  * Get port from environment and store in Express.
