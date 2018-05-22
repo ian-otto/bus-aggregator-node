@@ -3,6 +3,7 @@ const router = express.Router();
 const helpers  = require('../lib/helpers');
 const BusNotifier = helpers.BusNotifier;
 const Watcher = helpers.Watcher;
+const NotificationHelper = helpers.NotificationHelper;
 let busNotifier = new BusNotifier();
 
 const get_route_from_stop = (stop_id) => {
@@ -79,6 +80,7 @@ router.put('/buses/notification', function (req, res) {
     if(req.body.bus_id && req.body.trip_id && req.body.stop_id && req.body.notification_token && req.body.time_before) {
         try {
             busNotifier.add_watcher(new Watcher(req.body.bus_id, req.body.trip_id, req.body.stop_id, req.body.notification_token, req.body.time_before));
+            NotificationHelper.send_notification_created(req.body.notification_token, req.body.bus_id, req.body.time_before / 60 + " minutes");
             res.json({success: true});
         } catch(e) {
             res.json({success: false, error: "Error in setting notification", stack: e});
