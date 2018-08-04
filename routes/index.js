@@ -51,19 +51,27 @@ router.get('/stops', function (req, res, next) {
 router.get('/stops/eta/:id', function (req, res, next) {
     if(!req.params.id || req.params.id < 0) {
         res.status(400);
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Expires", -1);
         res.json({"error": "Invalid stopID"});
         return;
     }
     let route = get_route_from_stop(req.params.id);
     if(!route) {
         res.status(400);
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Expires", -1);
         res.json({"error": "Unknown stopID"});
         return;
     }
     global.etaGrabber.get_eta_info(req.params.id, function (err, data) {
         if(err) {
+            res.setHeader("Cache-Control", "no-cache");
+            res.setHeader("Expires", -1);
             res.json({error: err});
         } else {
+            res.setHeader("Cache-Control", "public, max-age=15");
+            res.setHeader("Expires", new Date(Date.now() + 15000).toUTCString());
             res.json(data);
         }
     })
@@ -74,6 +82,8 @@ router.get('/buses', function (req, res) {
     global.links.forEach(function (current) {
         retval = retval.concat(current.bus_array);
     });
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Expires", -1);
     res.json(retval);
 });
 
@@ -82,10 +92,14 @@ router.put('/buses/notification', function (req, res) {
         try {
             busNotifier.add_watcher(new Watcher(req.body.stop_id, req.body.bus_id, req.body.trip_id, req.body.notification_token, req.body.time_before));
             NotificationHelper.send_notification_created(req.body.notification_token, req.body.bus_id, req.body.time_before / 60 + " minutes");
+            res.setHeader("Cache-Control", "no-cache");
+            res.setHeader("Expires", -1);
             res.json({success: true});
         } catch(e) {
             console.log(e);
             res.status(400);
+            res.setHeader("Cache-Control", "no-cache");
+            res.setHeader("Expires", -1);
             res.json({success: false, error: "Error in setting notification", stack: e});
         }
     }
