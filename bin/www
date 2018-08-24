@@ -9,11 +9,10 @@ var debug = require('debug')('nautransit-backend:server');
 var http = require('http');
 
 const MountainLineLink = require('../lib/links/MountainLineLink');
-const TranslocLink = require('../lib/links/TranslocLink');
-
+const RideExpressLink = require('../lib/links/RideExpressLink');
 global.links = [];
 global.links.push(new MountainLineLink());
-global.links.push(new TranslocLink());
+global.links.push(new RideExpressLink());
 
 function executeLinkUpdate() {
     global.links.forEach(function (current) {

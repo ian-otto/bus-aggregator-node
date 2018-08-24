@@ -1,7 +1,7 @@
 let assert = require('assert');
-let TranslocLink = require("../../lib/links/TranslocLink");
+let TranslocLink = require("../../lib/links/RideExpressLink");
 
-describe('TranslocLink', function() {
+describe('RideExpressLink', function() {
     let link = undefined;
     describe("#construct", function () {
         it('should not error', function () {
